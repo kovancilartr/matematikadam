@@ -26,12 +26,12 @@ export const VideoPlayerX = ({
   provider,
   videoUrl,
   options,
-  courseId,
-  chapterId,
-  title,
+  // courseId,
+  // chapterId,
+  // title,
   isLocked,
-  completeOnEnd,
-}: VideoPlayerProps) => {
+}: // completeOnEnd,
+VideoPlayerProps) => {
   // console.log("playbackUrl", playbackUrl);
   // console.log("courseId", courseId);
   // console.log("chapterId", chapterId);
