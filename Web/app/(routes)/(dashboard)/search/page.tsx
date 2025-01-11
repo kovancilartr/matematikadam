@@ -1,4 +1,5 @@
 "use client";
+import { Suspense } from "react";
 import Categories from "@/components/Category/categories";
 import CourseList from "@/components/Course/courses-list";
 import { useEffect } from "react";
@@ -13,7 +14,7 @@ import LoadingSkeleton from "@/components/Global/Skeleton/LoadingSkeleton";
 import { useAuth } from "@/store/auth-context";
 import ProtectedScreen from "@/components/Global/ProtectedScreen";
 
-const BrowseDetailsPage = () => {
+const SearchContent = () => {
   const { isLoggedIn, loading: authLoading } = useAuth();
   const [dataLoading, setDataLoading] = useState(true);
   const [dataFilteredCategoriesCourses, setDataFilteredCategoriesCourses] =
@@ -22,7 +23,6 @@ const BrowseDetailsPage = () => {
 
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("categoryId");
-  console.log("authLoading", authLoading);
 
   useEffect(() => {
     const response = async () => {
@@ -49,10 +49,20 @@ const BrowseDetailsPage = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="p-6">
       <Categories dataCategories={dataCategories} />
-      <CourseList dataCourses={dataFilteredCategoriesCourses} />
+      <div className="mt-6">
+        <CourseList dataCourses={dataFilteredCategoriesCourses} />
+      </div>
     </div>
+  );
+};
+
+const BrowseDetailsPage = () => {
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <SearchContent />
+    </Suspense>
   );
 };
 
