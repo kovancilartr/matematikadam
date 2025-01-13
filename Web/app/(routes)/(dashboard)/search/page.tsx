@@ -1,62 +1,80 @@
 "use client";
+
 import { Suspense } from "react";
 import Categories from "@/components/Category/Category";
-import { useEffect } from "react";
-import {
-  getCategories,
-  getFilteredCategoriesCourses,
-} from "@/services/fetch-api";
-import { useState } from "react";
-import { Category, Course } from "@/types/globalTypes";
 import { useSearchParams } from "next/navigation";
 import LoadingSkeleton from "@/components/Global/Skeleton/LoadingSkeleton";
 import { useAuth } from "@/store/auth-context";
 import ProtectedScreen from "@/components/Global/ProtectedScreen";
 import CourseList from "@/components/Course/CourseList";
+import { useQuery } from "@tanstack/react-query";
+import {
+  getCategories,
+  getFilteredCategoriesCourses,
+} from "@/services/fetch-api";
 
 const SearchContent = () => {
   const { isLoggedIn, loading: authLoading } = useAuth();
-  const [dataLoading, setDataLoading] = useState(true);
-  const [dataFilteredCategoriesCourses, setDataFilteredCategoriesCourses] =
-    useState<Course[]>();
-  const [dataCategories, setDataCategories] = useState<Category[]>();
-
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("categoryId");
   const courseName = searchParams.get("courseName");
 
-  useEffect(() => {
-    const response = async () => {
-      setDataLoading(true);
-      const dataFilteredCategoriesCoursesResponse =
-        await getFilteredCategoriesCourses(
-          categoryId || undefined,
-          courseName || undefined
-        );
-      const dataCategoriesResponse = await getCategories();
+  // React Query ile kategorileri getir
+  const {
+    data: categoriesData,
+    isLoading: isCategoriesLoading,
+    isError: isCategoriesError,
+  } = useQuery({
+    queryKey: ["categories"],
+    queryFn: getCategories,
+    staleTime: 1000 * 60 * 5, // 5 dakika boyunca taze kabul edilir
+    gcTime: 1000 * 60 * 10, // 10 dakika boyunca cache'de tutulur
+    refetchOnWindowFocus: false, // Pencere odaklandığında yeniden fetch yapma
+    refetchOnReconnect: false, // İnternet bağlantısı tekrar geldiğinde fetch yapma
+  });
 
-      setDataFilteredCategoriesCourses(
-        dataFilteredCategoriesCoursesResponse?.data
-      );
-      setDataCategories(dataCategoriesResponse?.data);
-      setDataLoading(false);
-    };
-    response();
-  }, [categoryId, courseName]);
+  // React Query ile filtrelenmiş kursları getir
+  const {
+    data: filteredCoursesData,
+    isLoading: isCoursesLoading,
+    isError: isCoursesError,
+  } = useQuery({
+    queryKey: ["filteredCourses", categoryId, courseName],
+    queryFn: () =>
+      getFilteredCategoriesCourses(
+        categoryId || undefined,
+        courseName || undefined
+      ),
+    staleTime: 1000 * 60 * 5, // 5 dakika boyunca taze kabul edilir
+    gcTime: 1000 * 60 * 10, // 10 dakika boyunca cache'de tutulur
+    refetchOnWindowFocus: false, // Pencere odaklandığında yeniden fetch yapma
+    refetchOnReconnect: false, // İnternet bağlantısı tekrar geldiğinde fetch yapma
+    enabled: true, // Burada istediğim koşul gerçekleşirse bu query'i çalıştırır
+  });
 
-  if (authLoading || dataLoading) {
+  // Loading durumu
+  if (authLoading || isCategoriesLoading || isCoursesLoading) {
     return <LoadingSkeleton />;
   }
 
+  // Hata yönetimi
+  if (isCategoriesError || isCoursesError) {
+    return <p>Verileri çekerken bir hata oluştu.</p>;
+  }
+
+  // Giriş kontrolü
   if (!isLoggedIn) {
     return <ProtectedScreen />;
   }
 
   return (
     <div className="p-6">
-      <Categories dataCategories={dataCategories} />
+      {/* Kategoriler */}
+      <Categories dataCategories={categoriesData?.data} />
+
+      {/* Kurslar */}
       <div className="mt-6">
-        <CourseList dataCourses={dataFilteredCategoriesCourses} />
+        <CourseList dataCourses={filteredCoursesData?.data} />
       </div>
     </div>
   );

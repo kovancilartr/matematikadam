@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "react-hot-toast";
-import { AuthProvider } from "@/store/auth-context";
+import ClientProviders from "./providers";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -11,35 +9,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <>
-      <html lang="en">
-        <head />
-        <body>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <AuthProvider>{children}</AuthProvider>
-          </ThemeProvider>
-          <Toaster
-            position="top-center"
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: "white",
-                color: "#000",
-                borderRadius: "8px",
-              },
-            }}
-          />
-        </body>
-      </html>
-    </>
+    <html lang="en">
+      <head />
+      <body>
+        <ClientProviders>{children}</ClientProviders>
+      </body>
+    </html>
   );
 }

@@ -1,4 +1,4 @@
-import { Category, Course } from "@/types/globalTypes";
+import { Category, Course, NavRoute } from "@/types/globalTypes";
 
 export const getCourses = async () => {
   try {
@@ -73,13 +73,22 @@ export const getFilteredCategoriesCourses = async (
   }
 
   try {
-    let url = categoryId
-      ? `${baseUrl}/categories?populate[courses][populate]=*&filters[documentId][$eqi]=${categoryId}&filters[courses][isPublished][$eq]=true`
-      : `${baseUrl}/categories?populate[courses][populate]=*&filters[courses][isPublished][$eq]=true`;
+    let url = "";
 
-    // courseName varsa URL'ye filtre ekle
-    if (courseName) {
-      url += `&filters[courses][title][$containsi]=${courseName}`;
+    // Eğer categoryId veya courseName yoksa tüm kursları getir
+    if (!categoryId && !courseName) {
+      url = `${baseUrl}/courses?populate[categories][populate]=*&populate[sections][populate][chapters][populate]=*`;
+    } else {
+      // Aksi durumda filtreli istek yap
+      url = `${baseUrl}/categories?populate[courses][populate]=*&filters[courses][isPublished][$eq]=true`;
+
+      if (categoryId) {
+        url += `&filters[documentId][$eqi]=${categoryId}`;
+      }
+
+      if (courseName) {
+        url += `&filters[courses][title][$containsi]=${courseName}`;
+      }
     }
 
     const response = await fetch(url);
@@ -90,15 +99,18 @@ export const getFilteredCategoriesCourses = async (
 
     const data = await response.json();
 
-    // Extract courses from the response
+    // Eğer tüm kurslar çekilmişse doğrudan data.data döndür
+    if (!categoryId && !courseName) {
+      return {
+        success: true,
+        data: data.data || [],
+      };
+    }
+
+    // Filtrelenmiş kurslar döndür
     const courses = data.data
       ?.flatMap((category: Category) => category.courses || [])
       ?.filter((course: Course) => course.isPublished === true)
-      ?.filter((course: Course) =>
-        courseName
-          ? course.title.toLowerCase().includes(courseName.toLowerCase())
-          : true
-      ) // courseName varsa ek filtreleme yap
       ?.reduce((uniqueCourses: Course[], course: Course) => {
         if (!uniqueCourses.some((c) => c.documentId === course.documentId)) {
           uniqueCourses.push(course);
@@ -172,21 +184,51 @@ export const getChapter = async (chapterId: string) => {
   }
 };
 
-export const getNavRoutes = async () => {
+export const getNavRoutes = async (): Promise<{
+  success: boolean;
+  data?: NavRoute[];
+  error?: string;
+}> => {
+  const controller = new AbortController(); // AbortController ile timeout desteği
+  const timeout = setTimeout(() => controller.abort(), 5000); // 5 saniye timeout
+
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/nav-routes?sort=id:desc`
+      `${process.env.NEXT_PUBLIC_API_URL}/nav-routes?sort=id:desc`,
+      {
+        method: "GET",
+        signal: controller.signal, // Timeout için eklenen sinyal
+        headers: {
+          "Content-Type": "application/json",
+          // Gerekirse kimlik doğrulama token'ı buraya eklenebilir:
+          // Authorization: `Bearer ${yourToken}`,
+        },
+      }
     );
+
     if (!response.ok) {
-      throw new Error("Network response was not ok");
+      // Özel hata mesajı döndürme
+      const errorMessage = `Error: ${response.status} ${response.statusText}`;
+      throw new Error(errorMessage);
     }
+
     const data = await response.json();
+
     console.log("Server Response: getNavRoutes", data);
+
+    // Başarılı yanıt döndür
     return {
       success: true,
       data: data.data,
     };
   } catch (error) {
-    console.log(error);
+    console.error("Error in getNavRoutes:", error.message || error);
+
+    return {
+      success: false,
+      error: error.message || "Unknown error occurred",
+    };
+  } finally {
+    clearTimeout(timeout); // Timeout temizleniyor
   }
 };

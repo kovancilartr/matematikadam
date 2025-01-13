@@ -3,55 +3,59 @@ import CourseListSection from "@/components/Course/CourseListSection";
 import LoadingCourseDetailsSkeleton from "@/components/Global/Skeleton/LoadingCourseDetailsSkeleton";
 import { VideoPlayerX } from "@/components/Global/VideoPlayer";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 import { getCourse, getUserAndCoursesPurchases } from "@/services/fetch-api";
 import { useAuth } from "@/store/auth-context";
-import { Category, Course, Purchase } from "@/types/globalTypes";
+import { Category } from "@/types/globalTypes";
 import { useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
 
 const CourseDetailPage = () => {
   const params = useParams();
-  const [mounted, setMounted] = useState(false);
-  const courseId = params.id as string;
-  const [courseData, setCourseData] = useState<{
-    success: boolean;
-    data: Course;
-  } | null>(null);
   const { currentUser } = useAuth();
-  const [userPurchase, setUserPurchase] = useState<{
-    success: boolean;
-    data: Purchase[];
-  }>();
+  const courseId = params.id as string;
 
-  useEffect(() => {
-    const getCourseData = async () => {
-      try {
-        const response = await getCourse(courseId);
-        setCourseData(response);
-        setMounted(true);
-      } catch (error) {
-        console.log(error);
-      }
-    };
+  // React Query ile kurs verisini çekme
+  const {
+    data: courseData,
+    isLoading: isCourseLoading,
+    isError: isCourseError,
+  } = useQuery({
+    queryKey: ["course", courseId],
+    queryFn: () => getCourse(courseId),
+    staleTime: 1000 * 60 * 5, // 5 dakika boyunca taze kabul edilir
+    gcTime: 1000 * 60 * 10, // 10 dakika boyunca cache'de tutulur
+    enabled: !!courseId, // Burada istediğim koşul gerçekleşirse bu query'i çalıştırır
+  });
 
-    const getUserAndCoursesPurchasesData = async () => {
-      try {
-        const response = await getUserAndCoursesPurchases(
-          currentUser?.documentId as string,
-          courseId
-        );
-        setUserPurchase(response);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    getCourseData();
-    getUserAndCoursesPurchasesData();
-  }, [courseId, currentUser]);
+  // React Query ile kullanıcı ve kurs satın alımı verilerini çekme
+  const {
+    data: userPurchase,
+    isLoading: isPurchaseLoading,
+    isError: isPurchaseError,
+  } = useQuery({
+    queryKey: ["userPurchase", currentUser?.documentId, courseId],
+    queryFn: () =>
+      getUserAndCoursesPurchases(currentUser?.documentId as string, courseId),
+    enabled: false, // Kullanıcı verisi yoksa bu sorguyu çalıştırma
+  });
 
-  if (!mounted) return <LoadingCourseDetailsSkeleton />;
+  // Yükleme durumları
+  if (isCourseLoading || isPurchaseLoading) {
+    return <LoadingCourseDetailsSkeleton />;
+  }
 
-  console.log("COURSE DATA:", courseData);
+  // Hata durumları
+  if (isCourseError || isPurchaseError) {
+    return <p>Verileri çekerken bir hata oluştu.</p>;
+  }
+
+  if (!courseData?.success) {
+    return <p>Kurs bulunamadı.</p>;
+  }
+
+  // Kullanıcı satın almadıysa, kursu kilitli göster
+  const isLocked = !userPurchase?.success;
+
   return (
     <div className="p-6 max-w-screen-xl mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -61,7 +65,7 @@ const CourseDetailPage = () => {
               provider="youtube"
               videoUrl={courseData?.data?.videoUrl as string}
               courseId={courseId}
-              isLocked={!userPurchase?.success}
+              isLocked={isLocked}
             />
           </div>
           <div className="border rounded-md p-6 bg-myColor1-400 dark:bg-gray-600 dark:border-gray-700 dark:bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] dark:from-gray-600 dark:via-gray-700 dark:to-gray-900">
