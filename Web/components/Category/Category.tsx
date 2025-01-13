@@ -1,5 +1,5 @@
 import React from "react";
-import CategoryItem from "./category-item";
+import CategoryItem from "./CategoryItem";
 import { Category } from "@/types/globalTypes";
 
 interface CategoriesProps {

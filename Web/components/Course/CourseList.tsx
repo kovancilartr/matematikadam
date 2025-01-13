@@ -1,5 +1,5 @@
 import React from "react";
-import CourseCard from "./course-card";
+import CourseCard from "./CourseCard";
 import { Course } from "@/types/globalTypes";
 
 interface CourseListProps {

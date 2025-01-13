@@ -1,7 +1,6 @@
 "use client";
 import { Suspense } from "react";
-import Categories from "@/components/Category/categories";
-import CourseList from "@/components/Course/courses-list";
+import Categories from "@/components/Category/Category";
 import { useEffect } from "react";
 import {
   getCategories,
@@ -13,6 +12,7 @@ import { useSearchParams } from "next/navigation";
 import LoadingSkeleton from "@/components/Global/Skeleton/LoadingSkeleton";
 import { useAuth } from "@/store/auth-context";
 import ProtectedScreen from "@/components/Global/ProtectedScreen";
+import CourseList from "@/components/Course/CourseList";
 
 const SearchContent = () => {
   const { isLoggedIn, loading: authLoading } = useAuth();
@@ -23,12 +23,16 @@ const SearchContent = () => {
 
   const searchParams = useSearchParams();
   const categoryId = searchParams.get("categoryId");
+  const courseName = searchParams.get("courseName");
 
   useEffect(() => {
     const response = async () => {
       setDataLoading(true);
       const dataFilteredCategoriesCoursesResponse =
-        await getFilteredCategoriesCourses(categoryId || undefined);
+        await getFilteredCategoriesCourses(
+          categoryId || undefined,
+          courseName || undefined
+        );
       const dataCategoriesResponse = await getCategories();
 
       setDataFilteredCategoriesCourses(
@@ -38,7 +42,7 @@ const SearchContent = () => {
       setDataLoading(false);
     };
     response();
-  }, [categoryId]);
+  }, [categoryId, courseName]);
 
   if (authLoading || dataLoading) {
     return <LoadingSkeleton />;

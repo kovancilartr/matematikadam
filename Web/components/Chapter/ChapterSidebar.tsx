@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import ChapterSidebarItem from "./chapter-sidebar-item";
+import ChapterSidebarItem from "./ChapterSidebarItem";
 
 interface ChapterSidebarProps {
   courseId: string;

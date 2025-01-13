@@ -62,7 +62,10 @@ export const getCategories = async () => {
   }
 };
 
-export const getFilteredCategoriesCourses = async (categoryId?: string) => {
+export const getFilteredCategoriesCourses = async (
+  categoryId?: string,
+  courseName?: string
+) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!baseUrl) {
     console.error("API URL is not defined in environment variables.");
@@ -70,9 +73,14 @@ export const getFilteredCategoriesCourses = async (categoryId?: string) => {
   }
 
   try {
-    const url = categoryId
+    let url = categoryId
       ? `${baseUrl}/categories?populate[courses][populate]=*&filters[documentId][$eqi]=${categoryId}&filters[courses][isPublished][$eq]=true`
       : `${baseUrl}/categories?populate[courses][populate]=*&filters[courses][isPublished][$eq]=true`;
+
+    // courseName varsa URL'ye filtre ekle
+    if (courseName) {
+      url += `&filters[courses][title][$containsi]=${courseName}`;
+    }
 
     const response = await fetch(url);
 
@@ -84,8 +92,13 @@ export const getFilteredCategoriesCourses = async (categoryId?: string) => {
 
     // Extract courses from the response
     const courses = data.data
-      ?.flatMap((category: Category) => category.courses || []) // Get all courses
-      ?.filter((course: Course) => course.isPublished === true) // Only include published courses
+      ?.flatMap((category: Category) => category.courses || [])
+      ?.filter((course: Course) => course.isPublished === true)
+      ?.filter((course: Course) =>
+        courseName
+          ? course.title.toLowerCase().includes(courseName.toLowerCase())
+          : true
+      ) // courseName varsa ek filtreleme yap
       ?.reduce((uniqueCourses: Course[], course: Course) => {
         if (!uniqueCourses.some((c) => c.documentId === course.documentId)) {
           uniqueCourses.push(course);
@@ -95,7 +108,7 @@ export const getFilteredCategoriesCourses = async (categoryId?: string) => {
 
     return {
       success: true,
-      data: courses || [], // Return empty array if no courses found
+      data: courses || [],
     };
   } catch (error) {
     console.error(

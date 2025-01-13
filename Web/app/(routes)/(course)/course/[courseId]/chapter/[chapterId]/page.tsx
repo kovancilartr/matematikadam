@@ -1,7 +1,7 @@
 "use client";
 
 // import { Banner } from "@/components/Global/banner";
-import { VideoPlayerX } from "@/components/Global/video-player-x";
+import { VideoPlayerX } from "@/components/Global/VideoPlayer";
 import { useParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 

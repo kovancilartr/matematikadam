@@ -1,7 +1,7 @@
 "use client";
-import CourseListSection from "@/components/Course/course-list-section";
+import CourseListSection from "@/components/Course/CourseListSection";
 import LoadingCourseDetailsSkeleton from "@/components/Global/Skeleton/LoadingCourseDetailsSkeleton";
-import { VideoPlayerX } from "@/components/Global/video-player-x";
+import { VideoPlayerX } from "@/components/Global/VideoPlayer";
 import { Badge } from "@/components/ui/badge";
 import { getCourse, getUserAndCoursesPurchases } from "@/services/fetch-api";
 import { useAuth } from "@/store/auth-context";

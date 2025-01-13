@@ -1,6 +1,6 @@
 "use client";
-import ChapterNavbar from "@/components/Chapter/chapter-navbar";
-import ChapterSidebar from "@/components/Chapter/chapter-sidebar";
+import ChapterNavbar from "@/components/Chapter/ChapterNavbar";
+import ChapterSidebar from "@/components/Chapter/ChapterSidebar";
 import { useParams } from "next/navigation";
 import React from "react";
 

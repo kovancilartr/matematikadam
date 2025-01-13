@@ -48,12 +48,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setCurrentUser(response.data);
           setLoading(false);
           setIsLoggedIn(true);
-          console.log("Token geçerli");
         } else {
           setCurrentUser(null);
           setLoading(false);
           setIsLoggedIn(false);
-          console.log("Token geçersiz");
         }
       } else {
         setCurrentUser(null);
